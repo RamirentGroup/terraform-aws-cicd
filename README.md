@@ -6,7 +6,7 @@
 
 Terraform module to create AWS [`CodePipeline`](https://aws.amazon.com/codepipeline/) with [`CodeBuild`](https://aws.amazon.com/codebuild/) for [`CI/CD`](https://en.wikipedia.org/wiki/CI/CD)
 
-This module supports three use-cases:
+This module supports 4 use-cases:
 
 1. **GitHub -> S3 (build artifact) -> Elastic Beanstalk (running application stack)**.
 The module gets the code from a ``GitHub`` repository (public or private), builds it by executing the ``buildspec.yml`` file from the repository, pushes the built artifact to an S3 bucket,
@@ -21,13 +21,21 @@ The module gets the code from a ``GitHub`` repository, builds a ``Docker`` image
 pushes the ``Docker`` image to an ``ECR`` repository, and deploys the ``Docker`` image to ``Elastic Beanstalk`` running ``Docker`` stack.
     - http://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html
 
-
 3. **GitHub -> ECR (Docker image)**.
 The module gets the code from a ``GitHub`` repository, builds a ``Docker`` image from it by executing the ``buildspec.yml`` and ``Dockerfile`` files from the repository,
 and pushes the ``Docker`` image to an ``ECR`` repository. This is used when we want to build a ``Docker`` image from the code and push it to ``ECR`` without deploying to ``Elastic Beanstalk``.
-To activate this mode, don't specify the ``app`` and ``env`` attributes for the module.
+To activate this mode, don't specify the ``ebs_app`` and ``ebs_env`` attributes for the module.
     - http://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html
 
+4. **GitHub -> ECR (Docker image) -> Elastic Container Service**.
+The module gets the code from a ``GitHub`` repository, builds a ``Docker`` image from it by executing the ``buildspec.yml`` and ``Dockerfile`` files from the repository,
+pushes the ``Docker`` image to an ``ECR`` repository and deploys the ``Docker`` image to ``ECS``.
+To activate this mode, don`t specify ``ebs_**`` and specify ``ecs_**`` variables for the module.
+    - http://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html
+
+### Approval
+
+Also, for every scenario, there is the same pipeline implemented with approval stage. It is activated specifying ``approve = true` variable.
 
 ## Usage
 
@@ -44,8 +52,13 @@ module "build" {
     enabled             = "true"
 
     # Elastic Beanstalk
-    app                 = "<(Optional) Elastic Beanstalk application name>"
-    env                 = "<(Optional) Elastic Beanstalk environment name>"
+    ebs_app                 = "<(Optional) Elastic Beanstalk application name>"
+    ebs_env                 = "<(Optional) Elastic Beanstalk environment name>"
+
+    # ECS
+    ecs_cluster             = "<(Optional) ECS cluster name>"
+    ecs_service             = "<(Optional) ECS service name>"
+    ecs_images_file         = "<(Optional, default images.json) ECS updated images>"
 
     # Application repository on GitHub
     github_oauth_token  = "(Optional) <GitHub Oauth Token with permissions to access private repositories>"
@@ -67,6 +80,9 @@ module "build" {
     aws_account_id      = "xxxxxxxxxx"
     image_repo_name     = "ecr-repo-name"
     image_tag           = "latest"
+    approve             = "false"
+    approve_comment     = ""
+    approve_url         = ""
 }
 ```
 

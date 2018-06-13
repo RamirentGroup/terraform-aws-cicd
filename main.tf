@@ -1,4 +1,4 @@
-data "aws_caller_identity" "default" {}
+4data "aws_caller_identity" "default" {}
 
 data "aws_region" "default" {
   current = true
@@ -6,7 +6,7 @@ data "aws_region" "default" {
 
 # Define composite variables for resources
 module "label" {
-  source     = "git::https://github.com/cloudposse/terraform-null-label.git?ref=tags/0.3.1"
+  source     = "git::https://github.com/huksley/terraform-generic-label.git?ref=master"
   namespace  = "${var.namespace}"
   name       = "${var.name}"
   stage      = "${var.stage}"
@@ -132,7 +132,7 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/cloudposse/terraform-aws-codebuild.git?ref=tags/0.6.2"
+  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=master"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
   stage              = "${var.stage}"
@@ -148,6 +148,12 @@ module "build" {
   image_repo_name    = "${var.image_repo_name}"
   image_tag          = "${var.image_tag}"
   github_token       = "${var.github_oauth_token}"
+  codebuild_var1     = "${var.codebuild_var1}"
+  codebuild_var1_val = "${var.codebuild_var1_val}"
+  codebuild_var2     = "${var.codebuild_var2}"
+  codebuild_var2_val = "${var.codebuild_var2_val}"
+  codebuild_var3     = "${var.codebuild_var3}"
+  codebuild_var3_val = "${var.codebuild_var3_val}"
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_s3" {
@@ -157,7 +163,7 @@ resource "aws_iam_role_policy_attachment" "codebuild_s3" {
 
 # Only one of the `aws_codepipeline` resources below will be created:
 
-# "source_build_deploy" will be created if `var.enabled` is set to `true` and the Elastic Beanstalk application name and environment name are specified
+# "source_build_deploy_ebs" will be created if `var.enabled` is set to `true` and the Elastic Beanstalk application name and environment name are specified
 
 # This is used in two use-cases:
 
@@ -171,9 +177,9 @@ resource "aws_iam_role_policy_attachment" "codebuild_s3" {
 
 # 1. GitHub -> ECR (Docker image)
 
-resource "aws_codepipeline" "source_build_deploy" {
+resource "aws_codepipeline" "source_build_deploy_ebs" {
   # Elastic Beanstalk application name and environment name are specified
-  count    = "${var.enabled && signum(length(var.app)) == 1 && signum(length(var.env)) == 1 ? 1 : 0}"
+  count    = "${var.enabled && !var.approve && signum(length(var.ebs_app)) == 1 && signum(length(var.ebs_env)) == 1 ? 1 : 0}"
   name     = "${module.label.id}"
   role_arn = "${aws_iam_role.default.arn}"
 
@@ -234,16 +240,333 @@ resource "aws_codepipeline" "source_build_deploy" {
       version         = "1"
 
       configuration {
-        ApplicationName = "${var.app}"
-        EnvironmentName = "${var.env}"
+        ApplicationName = "${var.ebs_app}"
+        EnvironmentName = "${var.ebs_env}"
       }
     }
   }
 }
 
+resource "aws_codepipeline" "source_build_deploy_ebs_approve" {
+  # Elastic Beanstalk application name and environment name are specified
+  count    = "${var.enabled && var.approve && signum(length(var.ebs_app)) == 1 && signum(length(var.ebs_env)) == 1 ? 1 : 0}"
+  name     = "${module.label.id}"
+  role_arn = "${aws_iam_role.default.arn}"
+
+  artifact_store {
+    location = "${aws_s3_bucket.default.bucket}"
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      output_artifacts = ["code"]
+
+      configuration {
+        OAuthToken           = "${var.github_oauth_token}"
+        Owner                = "${var.repo_owner}"
+        Repo                 = "${var.repo_name}"
+        Branch               = "${var.branch}"
+        PollForSourceChanges = "${var.poll_source_changes}"
+      }
+    }
+  }
+
+  stage {
+    name = "Approve"
+
+    action {
+      name     = "Approval"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+
+      configuration {
+        CustomData = "${var.approve_comment}"
+        ExternalEntityLink = "${var.approve_url}"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name     = "Build"
+      category = "Build"
+      owner    = "AWS"
+      provider = "CodeBuild"
+      version  = "1"
+
+      input_artifacts  = ["code"]
+      output_artifacts = ["package"]
+
+      configuration {
+        ProjectName = "${module.build.project_name}"
+      }
+    }
+  }
+
+  stage {
+    name = "Deploy"
+
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ElasticBeanstalk"
+      input_artifacts = ["package"]
+      version         = "1"
+
+      configuration {
+        ApplicationName = "${var.ebs_app}"
+        EnvironmentName = "${var.ebs_env}"
+      }
+    }
+  }
+}
+
+resource "aws_codepipeline" "source_build_deploy_ecs" {
+  # ECS cluster and service are specified and NO approve
+  count    = "${var.enabled && !var.approve && signum(length(var.ecs_service)) == 1 && signum(length(var.ecs_cluster)) == 1 ? 1 : 0}"
+  name     = "${module.label.id}"
+  role_arn = "${aws_iam_role.default.arn}"
+
+  artifact_store {
+    location = "${aws_s3_bucket.default.bucket}"
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      output_artifacts = ["code"]
+
+      configuration {
+        OAuthToken           = "${var.github_oauth_token}"
+        Owner                = "${var.repo_owner}"
+        Repo                 = "${var.repo_name}"
+        Branch               = "${var.branch}"
+        PollForSourceChanges = "${var.poll_source_changes}"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name     = "Build"
+      category = "Build"
+      owner    = "AWS"
+      provider = "CodeBuild"
+      version  = "1"
+
+      input_artifacts  = ["code"]
+      output_artifacts = ["package"]
+
+      configuration {
+        ProjectName = "${module.build.project_name}"
+      }
+    }
+  }
+
+  stage {
+    name = "Deploy"
+
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      input_artifacts = ["package"]
+      version         = "1"
+
+      configuration {
+        ClusterName   = "${var.ecs_cluster}"
+        ServiceName   = "${var.ecs_service}"
+        FileName      = "${var.ecs_images_file}"
+      }
+    }
+  }
+}
+
+resource "aws_codepipeline" "source_build_deploy_ecs_approve" {
+  # ECS cluster and service are specified and NO approve
+  count    = "${var.enabled && var.approve && signum(length(var.ecs_service)) == 1 && signum(length(var.ecs_cluster)) == 1 ? 1 : 0}"
+  name     = "${module.label.id}"
+  role_arn = "${aws_iam_role.default.arn}"
+
+  artifact_store {
+    location = "${aws_s3_bucket.default.bucket}"
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      output_artifacts = ["code"]
+
+      configuration {
+        OAuthToken           = "${var.github_oauth_token}"
+        Owner                = "${var.repo_owner}"
+        Repo                 = "${var.repo_name}"
+        Branch               = "${var.branch}"
+        PollForSourceChanges = "${var.poll_source_changes}"
+      }
+    }
+  }
+
+  # Approve must be BEFORE build as Build pushes new image to repo
+  stage {
+    name = "Approve"
+
+    action {
+      name     = "Approval"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+
+      configuration {
+        CustomData = "${var.approve_comment}"
+        ExternalEntityLink = "${var.approve_url}"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name     = "Build"
+      category = "Build"
+      owner    = "AWS"
+      provider = "CodeBuild"
+      version  = "1"
+
+      input_artifacts  = ["code"]
+      output_artifacts = ["package"]
+
+      configuration {
+        ProjectName = "${module.build.project_name}"
+      }
+    }
+  }
+
+  stage {
+    name = "Deploy"
+
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      input_artifacts = ["package"]
+      version         = "1"
+
+      configuration {
+        ClusterName   = "${var.ecs_cluster}"
+        ServiceName   = "${var.ecs_service}"
+        FileName      = "${var.ecs_images_file}"
+      }
+    }
+  }
+}
+
+resource "aws_codepipeline" "source_build_approve" {
+  # No EBS/ECS + approve
+  count    = "${var.enabled && var.approve && (signum(length(var.ebs_app) + length(var.ebs_env) + length(var.ecs_cluster) + length(var.ecs_service)) == 0) ? 1 : 0}"
+  name     = "${module.label.id}"
+  role_arn = "${aws_iam_role.default.arn}"
+
+  artifact_store {
+    location = "${aws_s3_bucket.default.bucket}"
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      output_artifacts = ["code"]
+
+      configuration {
+        OAuthToken           = "${var.github_oauth_token}"
+        Owner                = "${var.repo_owner}"
+        Repo                 = "${var.repo_name}"
+        Branch               = "${var.branch}"
+        PollForSourceChanges = "${var.poll_source_changes}"
+      }
+    }
+  }
+
+  stage {
+    name = "Approve"
+    
+    action {
+      name     = "Approval"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+
+      configuration {
+        CustomData = "${var.approve_comment}"
+        ExternalEntityLink = "${var.approve_url}"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name     = "Build"
+      category = "Build"
+      owner    = "AWS"
+      provider = "CodeBuild"
+      version  = "1"
+
+      input_artifacts  = ["code"]
+      output_artifacts = ["package"]
+
+      configuration {
+        ProjectName = "${module.build.project_name}"
+      }
+    }
+  }
+}
+
+
 resource "aws_codepipeline" "source_build" {
-  # Elastic Beanstalk application name or environment name are not specified
-  count    = "${var.enabled && (signum(length(var.app)) == 0 || signum(length(var.env)) == 0) ? 1 : 0}"
+  # No EBS/ECS + NO approve
+  count    = "${var.enabled && !var.approve && (signum(length(var.ebs_app) + length(var.ebs_env) + length(var.ecs_cluster) + length(var.ecs_service)) == 0) ? 1 : 0}"
   name     = "${module.label.id}"
   role_arn = "${aws_iam_role.default.arn}"
 
@@ -292,3 +615,4 @@ resource "aws_codepipeline" "source_build" {
     }
   }
 }
+  
