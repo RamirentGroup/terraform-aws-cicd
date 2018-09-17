@@ -357,7 +357,6 @@ resource "aws_codepipeline" "source_build_deploy_ecs" {
       output_artifacts = ["code"]
 
       configuration {
-        OAuthToken           = "${var.github_oauth_token}"
         Owner                = "${var.repo_owner}"
         Repo                 = "${var.repo_name}"
         Branch               = "${var.branch}"
