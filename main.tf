@@ -6,7 +6,7 @@ data "aws_region" "default" {
 
 # Define composite variables for resources
 module "label" {
-  source     = "git::https://github.com/huksley/terraform-generic-label.git?ref=master"
+  source     = "git::https://github.com/huksley/terraform-generic-label.git?ref=1.0_GA"
   namespace  = "${var.namespace}"
   name       = "${var.name}"
   stage      = "${var.stage}"
@@ -132,7 +132,7 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=master"
+  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.1_GA"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
   stage              = "${var.stage}"
