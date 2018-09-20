@@ -132,7 +132,7 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.1_GA"
+  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.2_GA"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
   stage              = "${var.stage}"
@@ -154,6 +154,10 @@ module "build" {
   codebuild_var2_val = "${var.codebuild_var2_val}"
   codebuild_var3     = "${var.codebuild_var3}"
   codebuild_var3_val = "${var.codebuild_var3_val}"
+  codebuild_var4     = "${var.codebuild_var4}"
+  codebuild_var4_val = "${var.codebuild_var4_val}"
+  codebuild_var5     = "${var.codebuild_var5}"
+  codebuild_var5_val = "${var.codebuild_var5_val}"
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_s3" {
