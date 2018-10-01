@@ -74,6 +74,11 @@ variable "build_compute_type" {
   description = "`CodeBuild` instance size.  Possible values are: ```BUILD_GENERAL1_SMALL``` ```BUILD_GENERAL1_MEDIUM``` ```BUILD_GENERAL1_LARGE```"
 }
 
+variable "build_cache_enable" {
+  default     = "false"
+  description = "Enable creation of cache bucket for CodeBuild"
+}
+
 variable "buildspec" {
   default     = ""
   description = " Declaration to use for building the project. [For more info](http://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html)"

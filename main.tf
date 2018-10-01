@@ -140,13 +140,14 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.4_GA"
+  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.5_GA"
   enabled            = "${var.enabled}"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
   stage              = "${var.stage}"
   build_image        = "${var.build_image}"
   build_compute_type = "${var.build_compute_type}"
+  cache_enabled      = "${var.build_cache_enable}"
   buildspec          = "${var.buildspec}"
   delimiter          = "${var.delimiter}"
   attributes         = "${concat(var.attributes, list("build"))}"
