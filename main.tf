@@ -16,12 +16,14 @@ module "label" {
 }
 
 resource "aws_s3_bucket" "default" {
+  count  = "${var.enabled == "true" ? 1 : 0}"
   bucket = "${module.label.id}"
   acl    = "private"
   tags   = "${module.label.tags}"
 }
 
 resource "aws_iam_role" "default" {
+  count              = "${var.enabled == "true" ? 1 : 0}"
   name               = "${module.label.id}"
   assume_role_policy = "${data.aws_iam_policy_document.assume.json}"
 }
@@ -44,11 +46,13 @@ data "aws_iam_policy_document" "assume" {
 }
 
 resource "aws_iam_role_policy_attachment" "default" {
+  count      = "${var.enabled == "true" ? 1 : 0}"
   role       = "${aws_iam_role.default.id}"
   policy_arn = "${aws_iam_policy.default.arn}"
 }
 
 resource "aws_iam_policy" "default" {
+  count  = "${var.enabled == "true" ? 1 : 0}"
   name   = "${module.label.id}"
   policy = "${data.aws_iam_policy_document.default.json}"
 }
@@ -78,11 +82,13 @@ data "aws_iam_policy_document" "default" {
 }
 
 resource "aws_iam_role_policy_attachment" "s3" {
+  count      = "${var.enabled == "true" ? 1 : 0}"    
   role       = "${aws_iam_role.default.id}"
   policy_arn = "${aws_iam_policy.s3.arn}"
 }
 
 resource "aws_iam_policy" "s3" {
+  count  = "${var.enabled == "true" ? 1 : 0}"
   name   = "${module.label.id}-s3"
   policy = "${data.aws_iam_policy_document.s3.json}"
 }
@@ -109,11 +115,13 @@ data "aws_iam_policy_document" "s3" {
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild" {
+  count      = "${var.enabled == "true" ? 1 : 0}"
   role       = "${aws_iam_role.default.id}"
   policy_arn = "${aws_iam_policy.codebuild.arn}"
 }
 
 resource "aws_iam_policy" "codebuild" {
+  count  = "${var.enabled == "true" ? 1 : 0}"
   name   = "${module.label.id}-codebuild"
   policy = "${data.aws_iam_policy_document.codebuild.json}"
 }
@@ -132,7 +140,8 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.2_GA"
+  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.4_GA"
+  enabled            = "${var.enabled}"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
   stage              = "${var.stage}"
@@ -161,6 +170,7 @@ module "build" {
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_s3" {
+  count      = "${var.enabled == "true" ? 1 : 0}"
   role       = "${module.build.role_arn}"
   policy_arn = "${aws_iam_policy.s3.arn}"
 }
