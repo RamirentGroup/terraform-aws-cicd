@@ -189,6 +189,46 @@ variable "codebuild_var5_val" {
   default     = "value5"
 }
 
+variable "codebuild_var6" {
+  type        = "string"
+  default     = "var6"
+}
+
+variable "codebuild_var6_val" {
+  type        = "string"
+  default     = "value6"
+}
+
+variable "codebuild_var7" {
+  type        = "string"
+  default     = "var7"
+}
+
+variable "codebuild_var7_val" {
+  type        = "string"
+  default     = "value7"
+}
+
+variable "codebuild_var8" {
+  type        = "string"
+  default     = "var8"
+}
+
+variable "codebuild_var8_val" {
+  type        = "string"
+  default     = "value8"
+}
+
+variable "codebuild_var9" {
+  type        = "string"
+  default     = "var9"
+}
+
+variable "codebuild_var9_val" {
+  type        = "string"
+  default     = "value9"
+}
+
 # FIXME: Currently approval only implemented to Source + Build variant of pipeline.
 variable "approve" {
   type        = "string"
