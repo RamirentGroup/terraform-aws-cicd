@@ -159,6 +159,7 @@ module "build" {
   image_repo_name    = "${var.image_repo_name}"
   image_tag          = "${var.image_tag}"
   github_token       = "${var.github_oauth_token}"
+  environment_variables = "${var.codebuild_environment_variables}"
   codebuild_var1     = "${var.codebuild_var1}"
   codebuild_var1_val = "${var.codebuild_var1_val}"
   codebuild_var2     = "${var.codebuild_var2}"
