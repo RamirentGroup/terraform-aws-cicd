@@ -141,7 +141,7 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.7_GA"
+  source             = "git::https://github.com/huksley/terraform-aws-codebuild.git?ref=1.8_GA"
   enabled            = "${var.enabled}"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
