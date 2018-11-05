@@ -141,7 +141,7 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/RamirentGroup/terraform-aws-codebuild.git?ref=1.9_GA"
+  source             = "git::https://github.com/RamirentGroup/terraform-aws-codebuild.git?ref=1.10_GA"
   enabled            = "${var.enabled}"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
@@ -160,24 +160,6 @@ module "build" {
   image_tag          = "${var.image_tag}"
   github_token       = "${var.github_oauth_token}"
   environment_variables = "${var.codebuild_environment_variables}"
-  codebuild_var1     = "${var.codebuild_var1}"
-  codebuild_var1_val = "${var.codebuild_var1_val}"
-  codebuild_var2     = "${var.codebuild_var2}"
-  codebuild_var2_val = "${var.codebuild_var2_val}"
-  codebuild_var3     = "${var.codebuild_var3}"
-  codebuild_var3_val = "${var.codebuild_var3_val}"
-  codebuild_var4     = "${var.codebuild_var4}"
-  codebuild_var4_val = "${var.codebuild_var4_val}"
-  codebuild_var5     = "${var.codebuild_var5}"
-  codebuild_var5_val = "${var.codebuild_var5_val}"
-  codebuild_var6     = "${var.codebuild_var6}"
-  codebuild_var6_val = "${var.codebuild_var6_val}"
-  codebuild_var7     = "${var.codebuild_var7}"
-  codebuild_var7_val = "${var.codebuild_var7_val}"
-  codebuild_var8     = "${var.codebuild_var8}"
-  codebuild_var8_val = "${var.codebuild_var8_val}"
-  codebuild_var9     = "${var.codebuild_var9}"
-  codebuild_var9_val = "${var.codebuild_var9_val}"
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_s3" {
