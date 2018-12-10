@@ -74,6 +74,7 @@ data "aws_iam_policy_document" "default" {
       "sqs:*",
       "ecs:*",
       "iam:PassRole",
+      "logs:PutRetentionPolicy"
     ]
 
     resources = ["*"]
@@ -141,7 +142,7 @@ data "aws_iam_policy_document" "codebuild" {
 }
 
 module "build" {
-  source             = "git::https://github.com/RamirentGroup/terraform-aws-codebuild.git?ref=1.10_GA"
+  source             = "git::https://github.com/RamirentGroup/terraform-aws-codebuild.git?ref=1.11_GA"
   enabled            = "${var.enabled}"
   namespace          = "${var.namespace}"
   name               = "${var.name}"
